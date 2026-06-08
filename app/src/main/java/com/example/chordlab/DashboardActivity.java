@@ -61,17 +61,19 @@ public class DashboardActivity extends AppCompatActivity {
         cardPiano.setOnClickListener(v  -> selectInstrument(cardPiano,  "Piano"));
         cardSax.setOnClickListener(v    -> selectInstrument(cardSax,    "Ukulele"));
 
-        // ── 3. PROFILE BUTTON ──
-        findViewById(R.id.ivProfileBtn).setOnClickListener(v -> {
+        // ── 3. PROFILE BUTTON (BAR AND ICON CONTAINER) ──
+        View.OnClickListener openProfile = v -> {
             ProfileSheetFragment sheet = ProfileSheetFragment.newInstance();
             sheet.show(getSupportFragmentManager(), "profile");
-        });
+        };
 
-        // ── 4. VIEW PAGER & PRACTICE MODE CARDS (FIXED MERGE) ──
+        findViewById(R.id.profileBar).setOnClickListener(openProfile);
+        findViewById(R.id.profileIconContainer).setOnClickListener(openProfile);
+
+        // ── 4. VIEW PAGER & PRACTICE MODE CARDS (FLASH RESTORED) ──
         ViewPager2 viewPager = findViewById(R.id.viewPagerPracticeModes);
         com.google.android.material.tabs.TabLayout tabIndicator = findViewById(R.id.tabIndicator);
 
-        // Created exactly once with all your actual button interactions intact!
         PracticeModesAdapter adapter = new PracticeModesAdapter((cardId, cardView) -> {
             if (cardId == R.id.cardPracticeMode) {
                 flashAndNavigate((LinearLayout) cardView, () -> {
@@ -87,26 +89,20 @@ public class DashboardActivity extends AppCompatActivity {
                 });
             } else if (cardId == R.id.cardSongPractice) {
                 flashAndNavigate((LinearLayout) cardView, () -> {
-                    // startActivity(new Intent(this, SongPracticeActivity.class));
+                    startActivity(new Intent(this, SongListActivity.class)); // <-- Update this!
                 });
-
-                // ── USER REQUESTED CHANGE: Activating Chord Library Navigation ──
             } else if (cardId == R.id.cardChordLibrary) {
                 flashAndNavigate((LinearLayout) cardView, () -> {
-                    // Fetch the currently active instrument from memory right before launching
                     SharedPreferences currentPrefs = getSharedPreferences("UserSession", MODE_PRIVATE);
                     String activeInstrument = currentPrefs.getString("instrument", "Guitar");
 
                     Intent intent = new Intent(this, ChordLibraryActivity.class);
-                    // Pass it along so the library knows which specific assets to render!
                     intent.putExtra("selected_instrument", activeInstrument);
                     startActivity(intent);
                 });
-                // ──────────────────────────────────────────────────────────────────
-
             } else if (cardId == R.id.cardVideoTranslator) {
                 flashAndNavigate((LinearLayout) cardView, () -> {
-                     startActivity(new Intent(this, VideoTranslatorActivity.class));
+                    startActivity(new Intent(this, VideoTranslatorActivity.class));
                 });
             }
         });
@@ -114,7 +110,6 @@ public class DashboardActivity extends AppCompatActivity {
         if (viewPager != null && adapter != null) {
             viewPager.setAdapter(adapter);
 
-            // ── LINK THE VIEW PAGER TO THE DOT INDICATORS ──
             if (tabIndicator != null) {
                 new com.google.android.material.tabs.TabLayoutMediator(tabIndicator, viewPager,
                         (tab, position) -> {
@@ -158,13 +153,13 @@ public class DashboardActivity extends AppCompatActivity {
         card.setBackgroundResource(R.drawable.bg_instrument_selected);
         selectedInstrumentCard = card;
 
-        // Save to SharedPreferences so profile sheet reflects the change
         getSharedPreferences("UserSession", MODE_PRIVATE)
                 .edit()
                 .putString("instrument", instrumentName)
                 .apply();
     }
 
+    // Restored flash logic for the main features!
     private void flashAndNavigate(LinearLayout card, Runnable navigateTo) {
         card.setBackgroundResource(R.drawable.bg_mode_selected);
         card.postDelayed(() -> {

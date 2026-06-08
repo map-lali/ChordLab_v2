@@ -32,6 +32,13 @@
             android:screenOrientation="portrait" />
 
         <activity
+            android:name=".SongListActivity"
+            android:exported="false" />
+        <activity
+            android:name=".SongPracticeActivity"
+            android:exported="false" />
+
+        <activity
             android:name=".MainActivity"
             android:exported="true">
             <intent-filter>
@@ -39,14 +46,16 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".DetailsActivity" android:exported="false" />
 
-        <activity android:name=".ProgressReportSheetFragment" android:exported="false" />
+        <activity
+            android:name=".DetailsActivity"
+            android:exported="false" />
 
         <activity
             android:name=".VideoTranslatorActivity"
             android:exported="false"
             android:screenOrientation="portrait" />
+
     </application>
 
 </manifest>

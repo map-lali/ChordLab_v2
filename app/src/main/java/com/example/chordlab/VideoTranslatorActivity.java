@@ -6,7 +6,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.provider.OpenableColumns;
 import android.view.View;
-import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -19,36 +19,42 @@ import androidx.cardview.widget.CardView;
 
 public class VideoTranslatorActivity extends AppCompatActivity {
 
-    private ImageView btnBackToDashboard;
-    private CardView cardUploadArea;
-    private TextView tvUploadStatusText, tvSelectedFileName, tvResultsDisplay;
+    // ── Views ────────────────────────────────────────────────────────────────
+    private LinearLayout btnBackToDashboard; // now a LinearLayout in the redesigned XML
+    private CardView     cardUploadArea;
+    private TextView     tvUploadStatusText, tvSelectedFileName, tvResultsDisplay;
+    private TextView     tvDetectedKey, tvChordCount;
     private AppCompatButton btnProcessAudio;
-    private ProgressBar progressBar;
+    private ProgressBar  progressBar;
+    private LinearLayout layoutProgress;       // wraps spinner + "Analyzing..." label
+    private LinearLayout layoutResultSummary;  // summary stat cards (Key + Chords Found)
+    private View         resultsDivider;
 
-    // Uri tracking context reference for your friends to pull raw byte data from
+    // Uri of the audio file selected by the user
     private Uri selectedAudioUri = null;
 
-    // Modern Android Storage Access Framework File Picker Launcher
-    private final ActivityResultLauncher<String> audioPickerLauncher = registerForActivityResult(
-            new ActivityResultContracts.GetContent(),
-            uri -> {
-                if (uri != null) {
-                    selectedAudioUri = uri;
-                    String fileName = getFileNameFromUri(uri);
+    // ── File picker launcher ─────────────────────────────────────────────────
+    private final ActivityResultLauncher<String> audioPickerLauncher =
+            registerForActivityResult(
+                    new ActivityResultContracts.GetContent(),
+                    uri -> {
+                        if (uri != null) {
+                            selectedAudioUri = uri;
+                            String fileName  = getFileNameFromUri(uri);
 
-                    // UI STATE CHANGE: Update views to show selected file name status
-                    tvUploadStatusText.setText("File Ready!");
-                    tvSelectedFileName.setText(fileName);
+                            tvUploadStatusText.setText("File Ready! ✓");
+                            tvSelectedFileName.setText(fileName);
 
-                    // Enable the action button now that a file is prepared
-                    btnProcessAudio.setEnabled(true);
-                    btnProcessAudio.setAlpha(1.0f);
+                            btnProcessAudio.setEnabled(true);
+                            btnProcessAudio.setAlpha(1.0f);
 
-                    Toast.makeText(this, "Audio selected successfully", Toast.LENGTH_SHORT).show();
-                }
-            }
-    );
+                            Toast.makeText(this, "Audio selected: " + fileName,
+                                    Toast.LENGTH_SHORT).show();
+                        }
+                    }
+            );
 
+    // ── Lifecycle ────────────────────────────────────────────────────────────
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -58,26 +64,35 @@ public class VideoTranslatorActivity extends AppCompatActivity {
         setupListeners();
     }
 
+    // ── View binding ─────────────────────────────────────────────────────────
     private void initializeViews() {
-        btnBackToDashboard = findViewById(R.id.btnBackToDashboard);
-        cardUploadArea     = findViewById(R.id.cardUploadArea);
-        tvUploadStatusText = findViewById(R.id.tvUploadStatusText);
-        tvSelectedFileName = findViewById(R.id.tvSelectedFileName);
-        btnProcessAudio    = findViewById(R.id.btnProcessAudio);
-        progressBar        = findViewById(R.id.progressBar);
-        tvResultsDisplay   = findViewById(R.id.tvResultsDisplay);
+        btnBackToDashboard  = findViewById(R.id.btnBackToDashboard);
+        cardUploadArea      = findViewById(R.id.cardUploadArea);
+        tvUploadStatusText  = findViewById(R.id.tvUploadStatusText);
+        tvSelectedFileName  = findViewById(R.id.tvSelectedFileName);
+        btnProcessAudio     = findViewById(R.id.btnProcessAudio);
+        progressBar         = findViewById(R.id.progressBar);
+        layoutProgress      = findViewById(R.id.layoutProgress);
+        tvResultsDisplay    = findViewById(R.id.tvResultsDisplay);
+        tvDetectedKey       = findViewById(R.id.tvDetectedKey);
+        tvChordCount        = findViewById(R.id.tvChordCount);
+        layoutResultSummary = findViewById(R.id.layoutResultSummary);
+        resultsDivider      = findViewById(R.id.resultsDivider);
     }
 
+    // ── Click listeners ──────────────────────────────────────────────────────
     private void setupListeners() {
+        // Back to Dashboard
         btnBackToDashboard.setOnClickListener(v -> {
-            Intent intent = new Intent(VideoTranslatorActivity.this, DashboardActivity.class);
-            startActivity(intent);
+            startActivity(new Intent(this, DashboardActivity.class));
             finish();
         });
 
-        // Launches system selector filtering exclusively for standard generic audio streams
-        cardUploadArea.setOnClickListener(v -> audioPickerLauncher.launch("audio/*"));
+        // Open system audio file picker
+        cardUploadArea.setOnClickListener(v ->
+                audioPickerLauncher.launch("audio/*"));
 
+        // Process the selected audio
         btnProcessAudio.setOnClickListener(v -> {
             if (selectedAudioUri != null) {
                 simulateProcessingState();
@@ -85,52 +100,77 @@ public class VideoTranslatorActivity extends AppCompatActivity {
         });
     }
 
-    // ── SIMULATION PLACEHOLDER FOR BACKEND CODE ────────────────────────────
+    // ── Processing simulation ─────────────────────────────────────────────────
     private void simulateProcessingState() {
-        // Toggle UI elements to processing mode
-        progressBar.setVisibility(View.VISIBLE);
-        btnProcessAudio.setEnabled(false);
-        btnProcessAudio.setAlpha(0.5f);
+        // Show progress, hide results, disable button
+        setProcessingUI(true);
         tvResultsDisplay.setText("Analyzing audio frequencies and detecting musical notes...");
+        tvResultsDisplay.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
 
-        // Simulated runtime delay handler (3 seconds) representing processing latency
-        progressBar.postDelayed(() -> {
-            progressBar.setVisibility(View.GONE);
-            btnProcessAudio.setEnabled(true);
-            btnProcessAudio.setAlpha(1.0f);
+        // Hide result summary cards while processing
+        layoutResultSummary.setVisibility(View.GONE);
+        resultsDivider.setVisibility(View.GONE);
 
-            // ── HOOK POINT FOR YOUR FRIENDS ──
-            // Tell your friends they can insert their main AI model execution loop or web API payload post right here!
-            // They can use 'selectedAudioUri' to get the file data.
-
-            // Setting mockup sequence results text output area display matrix
-            tvResultsDisplay.setText("🎉 Processing Complete!\n\nDetected Chord Progression Sequence:\n[ C Major ] ➔ [ G Major ] ➔ [ A Minor ] ➔ [ F Major ]");
-            tvResultsDisplay.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
-
-            Toast.makeText(this, "Analysis finished!", Toast.LENGTH_SHORT).show();
+        // ── HOOK POINT FOR YOUR FRIENDS ──────────────────────────────────────
+        // Replace this postDelayed block with your actual AI model call or API request.
+        // Use 'selectedAudioUri' to read the raw audio bytes and send to your backend.
+        // When results come back, call showResults(key, chordProgression).
+        // ─────────────────────────────────────────────────────────────────────
+        layoutProgress.postDelayed(() -> {
+            setProcessingUI(false);
+            showResults("C", "[ C Major ] → [ G Major ] → [ A Minor ] → [ F Major ]", 4);
+            Toast.makeText(this, "Analysis complete!", Toast.LENGTH_SHORT).show();
         }, 3000);
     }
 
-    // Helper method to parse clean file names from a storage ContentProvider URI
+    /**
+     * Displays the detection results in the results card.
+     *
+     * @param key             Detected key (e.g. "C")
+     * @param progression     Human-readable chord progression string
+     * @param chordsFound     Number of distinct chords detected
+     */
+    private void showResults(String key, String progression, int chordsFound) {
+        // Populate summary stat cards
+        tvDetectedKey.setText(key);
+        tvChordCount.setText(String.valueOf(chordsFound));
+
+        // Show summary and divider
+        layoutResultSummary.setVisibility(View.VISIBLE);
+        resultsDivider.setVisibility(View.VISIBLE);
+
+        // Show the progression in the main text area
+        tvResultsDisplay.setText("🎉 Detection complete!\n\n" + progression);
+        tvResultsDisplay.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
+        tvResultsDisplay.setTextColor(getResources().getColor(R.color.text_dark, null));
+    }
+
+    /**
+     * Toggles the UI between processing mode and idle mode.
+     */
+    private void setProcessingUI(boolean isProcessing) {
+        layoutProgress.setVisibility(isProcessing ? View.VISIBLE : View.GONE);
+        btnProcessAudio.setEnabled(!isProcessing);
+        btnProcessAudio.setAlpha(isProcessing ? 0.5f : 1.0f);
+    }
+
+    // ── Helpers ──────────────────────────────────────────────────────────────
     private String getFileNameFromUri(Uri uri) {
         String result = null;
-        if (uri.getScheme().equals("content")) {
-            try (Cursor cursor = getContentResolver().query(uri, null, null, null, null)) {
+        if ("content".equals(uri.getScheme())) {
+            try (Cursor cursor = getContentResolver()
+                    .query(uri, null, null, null, null)) {
                 if (cursor != null && cursor.moveToFirst()) {
-                    int nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
-                    if (nameIndex != -1) {
-                        result = cursor.getString(nameIndex);
-                    }
+                    int idx = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
+                    if (idx != -1) result = cursor.getString(idx);
                 }
             }
         }
         if (result == null) {
             result = uri.getPath();
-            int cut = result.lastIndexOf('/');
-            if (cut != -1) {
-                result = result.substring(cut + 1);
-            }
+            int cut = result != null ? result.lastIndexOf('/') : -1;
+            if (cut != -1) result = result.substring(cut + 1);
         }
-        return result;
+        return result != null ? result : "Unknown file";
     }
 }

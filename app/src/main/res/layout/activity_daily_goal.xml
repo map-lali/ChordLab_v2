@@ -1,47 +1,119 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:background="@drawable/bg_bottom_sheet"
-    android:orientation="vertical"
-    android:paddingBottom="32dp">
+    android:layout_height="match_parent">
 
-    <FrameLayout
+    <!-- Background -->
+    <ImageView
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:paddingStart="16dp"
-        android:paddingTop="16dp"
-        android:paddingEnd="16dp">
-
-        <ImageView
-            android:id="@+id/btnBackDailyGoal"
-            android:layout_width="36dp"
-            android:layout_height="36dp"
-            android:padding="6dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:clickable="true"
-            android:focusable="true"
-            android:contentDescription="Close Sheet"
-            android:src="@drawable/ic_arrow_back"
-            android:tint="@color/text_dark" />
-    </FrameLayout>
+        android:layout_height="match_parent"
+        android:contentDescription="@null"
+        android:scaleType="centerCrop"
+        android:src="@drawable/main_dashboard_bg" />
 
     <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:clipToPadding="false">
+        android:layout_height="match_parent"
+        android:clipToPadding="false"
+        android:paddingBottom="32dp">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
+            <!-- ── HEADER ── -->
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="200dp"
+                android:background="@drawable/metronome_bg_bpm_indicator">
+
+                <!-- Back button -->
+                <LinearLayout
+                    android:id="@+id/btnBackDailyGoal"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="16dp"
+                    android:layout_marginTop="40dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:foreground="?android:attr/selectableItemBackgroundBorderless"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:contentDescription="Back"
+                        android:src="@drawable/ic_arrow_back"
+                        android:tint="#FFFFFF" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="6dp"
+                        android:text="Dashboard"
+                        android:textColor="#FFFFFF"
+                        android:textSize="16sp" />
+                </LinearLayout>
+
+                <!-- Logo -->
+                <ImageView
+                    android:layout_width="70dp"
+                    android:layout_height="70dp"
+                    android:layout_alignParentEnd="true"
+                    android:layout_marginTop="40dp"
+                    android:layout_marginEnd="16dp"
+                    android:contentDescription="Logo"
+                    android:src="@drawable/ic_logo_whale" />
+
+                <!-- Title -->
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="20dp"
+                    android:layout_marginTop="90dp"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:letterSpacing="0.2"
+                        android:text="CHORDLAB"
+                        android:textColor="#CCDDFF"
+                        android:textSize="11sp" />
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Daily Goal"
+                            android:textColor="#FFFFFF"
+                            android:textSize="28sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:text="🎯"
+                            android:textSize="22sp" />
+                    </LinearLayout>
+                </LinearLayout>
+            </RelativeLayout>
+
+            <!-- ── STREAK CARD ── -->
             <androidx.cardview.widget.CardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="16dp"
-                android:layout_marginTop="10dp"
+                android:layout_marginTop="20dp"
                 android:layout_marginEnd="16dp"
                 app:cardBackgroundColor="#00000000"
                 app:cardCornerRadius="20dp"
@@ -55,6 +127,7 @@
                     android:orientation="horizontal"
                     android:padding="20dp">
 
+                    <!-- Current streak -->
                     <LinearLayout
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
@@ -99,6 +172,7 @@
                             android:textSize="16sp" />
                     </LinearLayout>
 
+                    <!-- Best streak -->
                     <LinearLayout
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
@@ -131,6 +205,7 @@
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
 
+            <!-- ── TODAY'S PROGRESS ── -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -142,6 +217,7 @@
                 android:textStyle="bold"
                 android:letterSpacing="0.15" />
 
+            <!-- Circular progress -->
             <FrameLayout
                 android:layout_width="160dp"
                 android:layout_height="160dp"
@@ -178,6 +254,7 @@
                 </LinearLayout>
             </FrameLayout>
 
+            <!-- Minutes practiced -->
             <TextView
                 android:id="@+id/tvMinutesPracticed"
                 android:layout_width="wrap_content"
@@ -188,6 +265,7 @@
                 android:textColor="@color/text_gray"
                 android:textSize="13sp" />
 
+            <!-- ── TODAY'S TASKS ── -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -198,6 +276,7 @@
                 android:textSize="16sp"
                 android:textStyle="bold" />
 
+            <!-- Task list container -->
             <LinearLayout
                 android:id="@+id/taskContainer"
                 android:layout_width="match_parent"
@@ -209,4 +288,4 @@
 
         </LinearLayout>
     </ScrollView>
-</LinearLayout>
+</FrameLayout>

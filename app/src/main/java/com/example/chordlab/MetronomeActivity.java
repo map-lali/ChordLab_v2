@@ -1,6 +1,5 @@
 package com.example.chordlab;
 
-import android.content.Intent;
 import android.media.AudioAttributes;
 import android.media.AudioFormat;
 import android.media.AudioTrack;
@@ -8,7 +7,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.view.View;
-import android.view.animation.LinearInterpolator;
 import android.widget.Button;
 import android.widget.SeekBar;
 import android.widget.TextView;
@@ -28,10 +26,6 @@ public class MetronomeActivity extends AppCompatActivity {
     private Button btnTapTempo;
     private Button btnSig44, btnSig34, btnSig68, btnSig24;
     private View[] beatViews;
-
-    // ── PENDULUM FIELDS ─────────────────────────────────────────────────────
-    private View pendulumDot;
-    private boolean pendulumGoingRight = true;
 
     // ── State ───────────────────────────────────────────────────────────────
     private int bpm = 120;
@@ -90,16 +84,11 @@ public class MetronomeActivity extends AppCompatActivity {
         btnSig68      = findViewById(R.id.btnSig68);
         btnSig24      = findViewById(R.id.btnSig24);
 
-        // Bind the pendulum dot
-        pendulumDot   = findViewById(R.id.pendulumDot);
-
         beatViews = new View[]{
                 findViewById(R.id.beat1),
                 findViewById(R.id.beat2),
                 findViewById(R.id.beat3),
-                findViewById(R.id.beat4),
-                findViewById(R.id.beat5),
-                findViewById(R.id.beat6)
+                findViewById(R.id.beat4)
         };
     }
 
@@ -185,7 +174,6 @@ public class MetronomeActivity extends AppCompatActivity {
         btnStart.setText("▶  START");
         currentBeat = 0;
         updateBeatIndicators();
-        resetPendulum(); // Reset the pendulum position when stopped
     }
 
     private void restartTick() {
@@ -208,14 +196,7 @@ public class MetronomeActivity extends AppCompatActivity {
             while (audioRunning && isRunning) {
                 long intervalMs = 60_000L / bpm;
 
-                double frequency = 1200.0; // Normal beat tone
-                if (currentBeat == 0) {
-                    frequency = 1800.0; // Primary accent (Beat 1)
-                } else if (timeSignature == 6 && currentBeat == 3) {
-                    frequency = 1500.0; // Secondary accent (Beat 4 in 6/8 time)
-                }
-
-                playClick(frequency);
+                playClick(currentBeat == 0);
 
                 final int displayBeat = currentBeat;
                 handler.post(() -> {
@@ -226,7 +207,7 @@ public class MetronomeActivity extends AppCompatActivity {
                 try {
                     Thread.sleep(Math.max(10, intervalMs - 10));
                 } catch (InterruptedException e) {
-                    break;
+                    break;  // ✅ Properly exits when interrupted
                 }
             }
         });
@@ -236,10 +217,12 @@ public class MetronomeActivity extends AppCompatActivity {
 
     /**
      * Synthesises a short click tone and plays it immediately.
+     * accent = true  → higher-pitched accent on beat 1
      */
-    private void playClick(double frequency) {
+    private void playClick(boolean accent) {
         int durationMs   = 30;
         int numSamples   = (SAMPLE_RATE * durationMs) / 1000;
+        double frequency = accent ? 1800.0 : 1200.0;
 
         short[] samples = new short[numSamples];
         for (int i = 0; i < numSamples; i++) {
@@ -270,18 +253,15 @@ public class MetronomeActivity extends AppCompatActivity {
         track.write(samples, 0, numSamples);
         track.play();
 
+        // Release after playback
         new Handler(Looper.getMainLooper()).postDelayed(() -> {
             track.stop();
             track.release();
         }, durationMs + 50);
     }
 
-    // ── Beat indicator lights & Pendulum ─────────────────────────────────────
+    // ── Beat indicator lights ────────────────────────────────────────────────
     private void highlightBeat(int beat) {
-
-        // Trigger the pendulum sweep on every single beat!
-        animatePendulum();
-
         for (int i = 0; i < beatViews.length; i++) {
             if (i < timeSignature) {
                 beatViews[i].setVisibility(View.VISIBLE);
@@ -290,7 +270,7 @@ public class MetronomeActivity extends AppCompatActivity {
                                 ? R.drawable.metronome_bg_beat_active
                                 : R.drawable.metronome_bg_beat_inactive);
             } else {
-                beatViews[i].setVisibility(View.GONE);
+                beatViews[i].setVisibility(View.INVISIBLE);
             }
         }
     }
@@ -301,46 +281,9 @@ public class MetronomeActivity extends AppCompatActivity {
                 beatViews[i].setVisibility(View.VISIBLE);
                 beatViews[i].setBackgroundResource(R.drawable.metronome_bg_beat_inactive);
             } else {
-                beatViews[i].setVisibility(View.GONE);
+                beatViews[i].setVisibility(View.INVISIBLE);
             }
         }
-    }
-
-    // ── Pendulum Animation Logic ─────────────────────────────────────────────
-    private void animatePendulum() {
-        if (pendulumDot == null) return;
-
-        pendulumDot.post(() -> {
-            // Get parent width to know how far to slide
-            int parentWidth = ((View) pendulumDot.getParent()).getWidth();
-            int dotWidth    = pendulumDot.getWidth();
-
-            if (parentWidth == 0) return; // Prevent layout issues before fully drawn
-
-            float maxTransX = parentWidth - dotWidth;
-
-            float targetX = pendulumGoingRight ? maxTransX : 0f;
-            pendulumGoingRight = !pendulumGoingRight;
-
-            long beatMs = 60_000L / bpm;
-
-            pendulumDot.animate()
-                    .translationX(targetX)
-                    .setDuration(beatMs)
-                    .setInterpolator(new LinearInterpolator()) // Keeps the sweep smooth
-                    .start();
-        });
-    }
-
-    private void resetPendulum() {
-        if (pendulumDot == null) return;
-        pendulumDot.post(() -> {
-            pendulumGoingRight = true;
-            pendulumDot.animate()
-                    .translationX(0f)
-                    .setDuration(200)
-                    .start();
-        });
     }
 
     // ── Tap Tempo ────────────────────────────────────────────────────────────
@@ -348,6 +291,7 @@ public class MetronomeActivity extends AppCompatActivity {
         btnTapTempo.setOnClickListener(v -> {
             long now = System.currentTimeMillis();
 
+            // Reset if too much time has passed since last tap
             if (!tapTimes.isEmpty() && now - tapTimes.get(tapTimes.size() - 1) > TAP_RESET_MS) {
                 tapTimes.clear();
             }
@@ -364,17 +308,14 @@ public class MetronomeActivity extends AppCompatActivity {
                 if (isRunning) restartTick();
             }
 
+            // Keep last 8 taps
             if (tapTimes.size() > 8) tapTimes.remove(0);
         });
     }
 
     // ── Back button ──────────────────────────────────────────────────────────
     private void setupBackButton() {
-        findViewById(R.id.btnBack).setOnClickListener(v -> {
-            Intent intent = new Intent(MetronomeActivity.this, DashboardActivity.class);
-            startActivity(intent);
-            finish();
-        });
+        findViewById(R.id.btnBack).setOnClickListener(v -> finish());
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────
